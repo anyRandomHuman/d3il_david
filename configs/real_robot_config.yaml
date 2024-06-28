@@ -1,7 +1,7 @@
 defaults:
-  - agents: mamba_cross_agent
+  - agents: oc_ddpm_agent
 
-agent_name: mamba_cross
+agent_name: oc_ddpm
 log_dir: logs/real_robot_${task_suite}/
 
 train_data_path: /home/temp_store/real_robot_data
@@ -12,8 +12,8 @@ if_sim: False
 
 # insert wandb here
 wandb:
-  entity: atalaydonat
-  project: d3il
+  entity: tcx513887573
+  project: praktikum
 
 group: ${task_suite}_${agent_name}
 
