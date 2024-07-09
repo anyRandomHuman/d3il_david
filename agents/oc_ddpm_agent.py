@@ -15,6 +15,7 @@ from sklearn.neighbors import KernelDensity
 
 from agents.base_agent import BaseAgent
 from agents.models.oc_ddpm.ema import ExponentialMovingAverage
+import utils.hdf5_to_img
 
 # A logger for this file
 log = logging.getLogger(__name__)
@@ -195,6 +196,7 @@ class DiffusionAgent(BaseAgent):
 
                 if self.goal_condition:
                     state, action, mask, goal = data
+                    
                     batch_loss = self.train_step(state, action, goal)
                 else:
                     state, action, mask = data
