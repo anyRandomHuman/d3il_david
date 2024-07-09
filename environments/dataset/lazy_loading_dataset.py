@@ -63,6 +63,20 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         self.cams_resize = [self.cam_0_resize, self.cam_1_resize]
         self.traj_dirs = list(data_dir.iterdir())
         for traj_dir in tqdm(self.traj_dirs):
+<<<<<<< HEAD
+=======
+            # traj_img_index = []
+            # image_path = traj_dir / "images"
+            # image_hdf5 = traj_dir / "imgs.hdf5"
+            # if Path(image_path).is_dir() :
+            #     pass
+            # elif Path(image_hdf5).exists():
+            #     with h5py.File(image_hdf5, 'r') as f:
+            #         for i,dataset in enumerate(list(f.keys())[:cam_num]):
+            #             cam_img_index = range(len(f[dataset]))
+            #             traj_img_index.append((image_hdf5, dataset, cam_img_index))
+            #     cams_img_index[i].append(traj_img_index)
+>>>>>>> chaning the config
 
             zero_action = torch.zeros(
                 (1, self.max_len_data, self.action_dim), dtype=torch.float32
