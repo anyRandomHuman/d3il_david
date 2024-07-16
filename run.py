@@ -1,7 +1,7 @@
 import os
 import logging
 import random
-
+from environments.dataset import *
 import hydra
 import numpy as np
 
@@ -13,9 +13,7 @@ import torch
 log = logging.getLogger(__name__)
 
 
-OmegaConf.register_new_resolver(
-     "add", lambda *numbers: sum(numbers)
-)
+OmegaConf.register_new_resolver("add", lambda *numbers: sum(numbers))
 torch.cuda.empty_cache()
 
 
@@ -47,7 +45,7 @@ def main(cfg: DictConfig) -> None:
         entity=cfg.wandb.entity,
         group=cfg.group,
         mode="disabled",
-        config=wandb.config
+        config=wandb.config,
     )
 
     agent = hydra.utils.instantiate(cfg.agents)

@@ -1,5 +1,6 @@
 defaults:
   - agents: oc_ddpm_agent
+  - _self_
 
 agent_name: oc_ddpm
 log_dir: logs/real_robot_${task_suite}/
