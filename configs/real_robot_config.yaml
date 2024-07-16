@@ -4,7 +4,7 @@ defaults:
 agent_name: oc_ddpm
 log_dir: logs/real_robot_${task_suite}/
 
-train_data_path: /home/temp_store/real_robot_data
+train_data_path: /media/alr_admin/ECB69036B69002EE/Data_less_obs_space_hdf5
 #train_data_path: /media/alr_admin/Data/atalay/data  # just for dataset init
 
 task_suite: insertion  # pickPlacing cupStacking insertion
@@ -101,7 +101,7 @@ scale_data: True
 # Environment
 obs_dim: 10 # not used
 action_dim: 8
-max_len_data: 600
+max_len_data: 1400
 
 action_seq_size: 5
 obs_seq_len: 1
@@ -115,7 +115,9 @@ cam_num: 2
 
 # Dataset
 trainset:
-  _target_: environments.dataset.real_robot_dataset.Real_Robot_Dataset
+
+  # _target_: environments.dataset.real_robot_dataset.Real_Robot_Dataset
+  _target_: environments.dataset.lazy_loading_dataset.Lazy_Loading_Dataset
   data_directory: ${train_data_path}
   task_suite: ${task_suite}
   obs_dim: ${obs_dim}
@@ -130,7 +132,7 @@ trainset:
   cam_num: ${cam_num}
 
 valset:
-  _target_: environments.dataset.real_robot_dataset.Real_Robot_Dataset
+  _target_: environments.dataset.lazy_loading_dataset.Lazy_Loading_Dataset
   data_directory: ${train_data_path}
   task_suite: ${task_suite}
   obs_dim: ${obs_dim}
@@ -142,7 +144,7 @@ valset:
   cam_0_h: 256
   cam_1_w: 256
   cam_1_h: 256
-
+  cam_num: ${cam_num}
 
 # Simulation
 simulation:
