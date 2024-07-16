@@ -44,14 +44,14 @@ class BaseAgent(abc.ABC):
             prefetch_factor=10
         )
 
-        self.test_dataloader = torch.utils.data.DataLoader(
-            self.valset,
-            batch_size=val_batch_size,
-            shuffle=False,
-            num_workers=num_workers,
-            pin_memory=True,
-            prefetch_factor=10
-        )
+        # self.test_dataloader = torch.utils.data.DataLoader(
+        #     self.valset,
+        #     batch_size=val_batch_size,
+        #     shuffle=False,
+        #     num_workers=num_workers,
+        #     pin_memory=True,
+        #     prefetch_factor=10
+        # )
 
         self.eval_every_n_epochs = eval_every_n_epochs
 
