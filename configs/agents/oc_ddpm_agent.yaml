@@ -68,11 +68,11 @@ model:
       # acceptable types: rgb, low_dim
       obs:
         agentview_0:
-          shape: [3, ${trainset.cam_0_w}, ${trainset.cam_0_h}]
+          shape: [3, 256, 256]
           type: rgb
     rgb_model:
       _target_: agents.module.vision.get_model.get_resnet
-      input_shape: [3, ${trainset.cam_0_w}, ${trainset.cam_0_h}]
+      input_shape: [3, 256, 256]
       output_size: 128
     resize_shape: null
     #    crop_shape: [ 84, 84 ]
@@ -88,11 +88,11 @@ model:
       # acceptable types: rgb, low_dim
       obs:
         agentview_1:
-          shape: [3, ${trainset.cam_1_w}, ${trainset.cam_1_h}]
+          shape: [3, 256, 256]
           type: rgb
     rgb_model:
       _target_: agents.module.vision.get_model.get_resnet
-      input_shape: [3, ${trainset.cam_1_w}, ${trainset.cam_1_h}]
+      input_shape: [3, 256, 256]
       output_size: 128
     resize_shape: null
     #    crop_shape: [ 84, 84 ]

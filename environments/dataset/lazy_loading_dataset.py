@@ -2,11 +2,9 @@ import logging
 from environments.dataset.base_dataset import TrajectoryDataset
 import os
 from pathlib import Path
-import cv2
 import numpy as np
 import torch
 from tqdm import tqdm
-import h5py
 from agents.utils.hdf5_to_img import read_img_from_hdf5
 
 
@@ -16,20 +14,20 @@ def img_file_key(p: Path):
 
 class Lazy_Loading_Dataset(TrajectoryDataset):
     def __init__(
-            self,
-            data_directory: os.PathLike,
-            task_suite: str = "cupStacking",
-            device="cpu",
-            obs_dim: int = 20,
-            action_dim: int = 2,
-            max_len_data: int = 256,
-            window_size: int = 1,
-            if_sim: bool = False,
-            cam_0_w= 256,
-            cam_0_h= 256,
-            cam_1_w= 256,
-            cam_1_h= 256,
-            cam_num = 2
+        self,
+        data_directory: os.PathLike,
+        task_suite: str = "cupStacking",
+        device="cpu",
+        obs_dim: int = 20,
+        action_dim: int = 2,
+        max_len_data: int = 256,
+        window_size: int = 1,
+        if_sim: bool = False,
+        cam_0_w=256,
+        cam_0_h=256,
+        cam_1_w=256,
+        cam_1_h=256,
+        cam_num=2,
     ):
 
         super().__init__(
@@ -53,38 +51,27 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         elif task_suite == "insertion":
             data_dir = Path(data_directory + "/insertion")
         else:
-            raise ValueError('Wrong name of task suite.')
+            raise ValueError("Wrong name of task suite.")
 
         if not if_sim:
             load_img = -1
         else:
             load_img = 1
 
-        self.cam_0_resize = [cam_0_w, cam_0_h]
-        self.cam_1_resize = [cam_1_w, cam_1_h]
-        # cams_img_index = [[] for i in range(cam_num)] #shape[num_traj, num_cam, len_record]
-        self.traj_dirs = data_dir.iterdir()
+        self.cam_0_resize = (cam_0_w, cam_0_h)
+        self.cam_1_resize = (cam_1_w, cam_1_h)
+        self.cams_resize = [self.cam_0_resize, self.cam_1_resize]
+        self.traj_dirs = list(data_dir.iterdir())
         for traj_dir in tqdm(self.traj_dirs):
-            # traj_img_index = []
-            # image_path = traj_dir / "images"
-            # image_hdf5 = traj_dir / "imgs.hdf5"
-            # if Path(image_path).is_dir() :
-            #     pass
-            # elif Path(image_hdf5).exists():
-            #     with h5py.File(image_hdf5, 'r') as f:
-            #         for i,dataset in enumerate(list(f.keys())[:cam_num]):
-            #             cam_img_index = range(len(f[dataset]))
-            #             traj_img_index.append((image_hdf5, dataset, cam_img_index))
-            #     cams_img_index[i].append(traj_img_index)
-                
+
             zero_action = torch.zeros(
                 (1, self.max_len_data, self.action_dim), dtype=torch.float32
             )
             zero_mask = torch.zeros((1, self.max_len_data), dtype=torch.float32)
 
-            joint_pos = torch.load(traj_dir / "joint_pos.pt")
+            joint_pos = torch.load(traj_dir / "follower_joint_pos.pt")
             # joint_vel = torch.load(traj_dir / "joint_vel.pt")
-            gripper_command = torch.load(traj_dir / "gripper_command.pt")
+            gripper_command = torch.load(traj_dir / "follower_gripper_state.pt")
 
             valid_len = len(joint_pos) - 1
 
@@ -98,6 +85,8 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
             actions.append(zero_action)
 
             zero_mask[0, :valid_len] = 1
+            actions.append(zero_action)
+            masks.append(zero_mask)
 
         # self.cams_imgs_index = cams_img_index
         self.actions = torch.cat(actions).to(device).float()
@@ -146,14 +135,13 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         i, start, end = self.slices[idx]
         traj_dir = self.traj_dirs[i]
 
-        cams_imgs = read_img_from_hdf5(traj_dir, start, end)
+        cams_imgs = read_img_from_hdf5(
+            traj_dir, start, end, self.cams_resize, self.device
+        )
         cam_0 = cams_imgs[0]
         cam_1 = cams_imgs[1]
-        
+
         act = self.actions[i, start:end]
         mask = self.masks[i, start:end]
-
-        # bp_imgs = self.bp_cam_imgs[i][start:end]
-        # inhand_imgs = self.inhand_cam_imgs[i][start:end]
 
         return cam_0, cam_1, act, mask
