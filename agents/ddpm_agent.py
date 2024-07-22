@@ -277,7 +277,7 @@ class DiffusionAgent(BaseAgent):
             print(f"read time: {read_time}")
             print(f"compute time: {compute_time}")
             os.write(f, f"read time: {read_time}".encode())
-            os.write(f, f"compute time: {compute_time}".encode)
+            os.write(f, f"compute time: {compute_time}".encode())
             os.close(f)
 
             log.info(
