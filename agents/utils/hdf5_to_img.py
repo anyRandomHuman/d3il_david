@@ -8,15 +8,13 @@ import torch
 
 
 def read_img_from_hdf5(path, start, end, cam_resizes, device):
-    f = h5py.File(os.path.join(path, "images.hdf5"), "r")
+    f = h5py.File(os.path.join(path, "imgs.hdf5"), "r")
     cams = []
     for i, cam in enumerate(list(f.keys())):
-        arr = np.array(f[cam])[start:end]
+        arr = f[cam][start:end]
         imgs = []
         for img in arr:
-            byte = BytesIO(arr)
-            img = Image.open(byte)
-            nparr = np.array(img)
+            nparr = cv2.imdecode(img, 1)
             processed = preprocess_img_for_training(
                 nparr, resize=cam_resizes[i], device=device
             )
@@ -40,4 +38,6 @@ def preprocess_img_for_training(img, resize=(256, 256), device="cuda"):
 
 
 if __name__ == "__main__":
-    pass
+    path = "/media/alr_admin/ECB69036B69002EE/Data_less_obs_space_hdf5/insertion/2024_07_04-16_02_30"
+
+    cam0, cam1 = read_img_from_hdf5(path, 0, 1, [256, 256], "cpu")

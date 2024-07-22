@@ -63,5 +63,11 @@ def main(cfg: DictConfig) -> None:
     wandb.finish()
 
 
+# @hydra.main(config_path="configs", config_name="real_robot_config.yaml")
+# def main(cfg: DictConfig) -> None:
+#     trainset = hydra.utils.instantiate(cfg.trainset)
+#     print(trainset[0])
+
+
 if __name__ == "__main__":
     main()
