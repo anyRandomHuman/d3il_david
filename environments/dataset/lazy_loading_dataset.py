@@ -28,6 +28,7 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         cam_1_w=256,
         cam_1_h=256,
         cam_num=2,
+        to_tensor=True,
     ):
 
         super().__init__(
@@ -62,6 +63,8 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         self.cam_1_resize = (cam_1_w, cam_1_h)
         self.cams_resize = [self.cam_0_resize, self.cam_1_resize]
         self.traj_dirs = list(data_dir.iterdir())
+        self.to_tensor = to_tensor
+
         for traj_dir in tqdm(self.traj_dirs):
 <<<<<<< HEAD
 =======
@@ -96,7 +99,6 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
             zero_action[0, :valid_len, :] = torch.cat(
                 [joint_pos[1:], gripper_command[1:, None]], dim=1
             )
-            actions.append(zero_action)
 
             zero_mask[0, :valid_len] = 1
             actions.append(zero_action)
@@ -106,7 +108,7 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         self.actions = torch.cat(actions).to(device).float()
         self.masks = torch.cat(masks).to(device).float()
 
-        self.num_data = len(self.actions)
+        self.num_data = len(self.actions) - 1
 
         self.slices = self.get_slices()
 
@@ -150,7 +152,12 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         traj_dir = self.traj_dirs[i]
 
         cams_imgs = read_img_from_hdf5(
-            traj_dir, start, end, self.cams_resize, self.device
+            traj_dir,
+            start,
+            end,
+            self.cams_resize,
+            self.device,
+            to_tensor=self.to_tensor,
         )
         cam_0 = cams_imgs[0]
         cam_1 = cams_imgs[1]

@@ -13,22 +13,22 @@ def img_file_key(p: Path):
     return int(p.name.partition(".")[0])
 
 
-class Real_Robot_Dataset(TrajectoryDataset):
+class Hdf5_Dataset(TrajectoryDataset):
     def __init__(
-            self,
-            data_directory: os.PathLike,
-            task_suite: str = "cupStacking",
-            device="cpu",
-            obs_dim: int = 20,
-            action_dim: int = 2,
-            max_len_data: int = 256,
-            window_size: int = 1,
-            if_sim: bool = False,
-            cam_0_w= 256,
-            cam_0_h= 256,
-            cam_1_w= 256,
-            cam_1_h= 256,
-            cam_num = 2
+        self,
+        data_directory: os.PathLike,
+        task_suite: str = "cupStacking",
+        device="cpu",
+        obs_dim: int = 20,
+        action_dim: int = 2,
+        max_len_data: int = 256,
+        window_size: int = 1,
+        if_sim: bool = False,
+        cam_0_w=256,
+        cam_0_h=256,
+        cam_1_w=256,
+        cam_1_h=256,
+        cam_num=2,
     ):
 
         super().__init__(
@@ -42,8 +42,6 @@ class Real_Robot_Dataset(TrajectoryDataset):
 
         logging.info("Loading Real Robot Dataset")
 
-        imgs_0_list = []
-        imgs_1_list = []
         actions = []
         masks = []
 
@@ -54,7 +52,7 @@ class Real_Robot_Dataset(TrajectoryDataset):
         elif task_suite == "insertion":
             data_dir = Path(data_directory + "/insertion")
         else:
-            raise ValueError('Wrong name of task suite.')
+            raise ValueError("Wrong name of task suite.")
 
         if not if_sim:
             load_img = -1
@@ -64,23 +62,27 @@ class Real_Robot_Dataset(TrajectoryDataset):
         self.cam_0_resize = [cam_0_w, cam_0_h]
         self.cam_1_resize = [cam_1_w, cam_1_h]
 
-
         self.imgs = []
         for traj_dir in tqdm(data_dir.iterdir()):
             traj_img = []
             image_path = traj_dir / "images"
             image_hdf5 = traj_dir / "imgs.hdf5"
-            if Path(image_path).is_dir() :
+            if Path(image_path).is_dir():
                 pass
             elif Path(image_hdf5).exists():
-                with h5py.File(image_hdf5, 'r') as f:
+                with h5py.File(image_hdf5, "r") as f:
                     for cam in list(f.keys())[:cam_num]:
                         cam_img = []
                         for img_code in f[cam]:
                             img = cv2.imdecode(img_code, 1)
                             img = img.transpose((2, 0, 1)) / 255.0
-                            img = torch.from_numpy(img).to(self.device).float().unsqueeze(0)
-                            #TODO:resize if necessary
+                            img = (
+                                torch.from_numpy(img)
+                                .to(self.device)
+                                .float()
+                                .unsqueeze(0)
+                            )
+                            # TODO:resize if necessary
                             cam_img.append(img)
                         traj_img.append(cam_img)
             self.imgs.append(traj_img)
@@ -90,9 +92,9 @@ class Real_Robot_Dataset(TrajectoryDataset):
             )
             zero_mask = torch.zeros((1, self.max_len_data), dtype=torch.float32)
 
-            joint_pos = torch.load(traj_dir / "joint_pos.pt")
+            joint_pos = torch.load(traj_dir / "follower_joint_pos.pt")
             # joint_vel = torch.load(traj_dir / "joint_vel.pt")
-            gripper_command = torch.load(traj_dir / "gripper_command.pt")
+            gripper_command = torch.load(traj_dir / "follower_gripper_state.pt")
 
             valid_len = len(joint_pos) - 1
 
@@ -109,8 +111,6 @@ class Real_Robot_Dataset(TrajectoryDataset):
             actions.append(zero_action)
             masks.append(zero_mask)
 
-        self.imgs_0_list = imgs_0_list
-        self.imgs_1_list = imgs_1_list
         self.actions = torch.cat(actions).to(device).float()
         self.masks = torch.cat(masks).to(device).float()
 
@@ -155,7 +155,6 @@ class Real_Robot_Dataset(TrajectoryDataset):
     def __getitem__(self, idx):
 
         i, start, end = self.slices[idx]
-
 
         img_0 = self.imgs[0][i][start:end]
         img_1 = self.imgs[1][i][start:end]

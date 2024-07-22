@@ -1,5 +1,5 @@
 defaults:
-  - agents: oc_ddpm_agent
+  - agents: ddpm_agent
 
 agent_name: oc_ddpm
 log_dir: logs/real_robot_${task_suite}/
@@ -112,12 +112,14 @@ train_action_seq: 5
 inference_action_seq: ${train_action_seq}
 
 cam_num: 2
+obj_centric: 0
+to_tensor: True
 
 # Dataset
 trainset:
-
   # _target_: environments.dataset.real_robot_dataset.Real_Robot_Dataset
   _target_: environments.dataset.lazy_loading_dataset.Lazy_Loading_Dataset
+  # _target_: environments.dataset.hdf5_dataset.Hdf5_Dataset
   data_directory: ${train_data_path}
   task_suite: ${task_suite}
   obs_dim: ${obs_dim}
@@ -130,6 +132,7 @@ trainset:
   cam_1_w: 256
   cam_1_h: 256
   cam_num: ${cam_num}
+  to_tensor: ${to_tensor}
 
 valset:
   _target_: environments.dataset.lazy_loading_dataset.Lazy_Loading_Dataset
@@ -145,6 +148,7 @@ valset:
   cam_1_w: 256
   cam_1_h: 256
   cam_num: ${cam_num}
+  to_tensor: ${to_tensor}
 
 # Simulation
 simulation:

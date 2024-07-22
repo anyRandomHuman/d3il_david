@@ -135,13 +135,3 @@ window_size: ${window_size}
 diffusion_kde: false
 diffusion_kde_samples: 100
 goal_conditioned: False
-
-obj_detector:
-  _target_: agents.utils.object_detector.Object_Detector
-  is_joint: True
-  feature_type: "box"
-  # feature_type: "mask"
-  obj_classes: [41, 39]
-  # cup_pred_class = 41
-  # stacked_3cups_class = 39
-  cfg: "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"

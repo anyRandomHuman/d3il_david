@@ -87,7 +87,6 @@ class DiffusionAgent(BaseAgent):
 
     def __init__(
         self,
-        obj_dector: DictConfig,
         model: DictConfig,
         optimization: DictConfig,
         trainset: DictConfig,
@@ -132,8 +131,6 @@ class DiffusionAgent(BaseAgent):
         self.model.model.max_action = torch.from_numpy(self.scaler.y_bounds[1, :]).to(
             self.device
         )
-
-        self.obj_detector = hydra.utils.instantiate(obj_dector)
 
         self.eval_model_name = "eval_best_ddpm.pth"
         self.last_model_name = "last_ddpm.pth"
@@ -255,21 +252,8 @@ class DiffusionAgent(BaseAgent):
 
                 agentview_0, agentview_1, action, mask = data
 
-                v0_obj_mask = self.obj_detector.get_features(agentview_0)
-                v1_obj_mask = self.obj_detector.get_features(agentview_1)
-
-                agentview_0 = np.concatenate((agentview_0, v0_obj_mask), -1)
-                agentview_1 = np.concatenate((agentview_1, v1_obj_mask), -1)
-
-                agentview_0 = (
-                    torch.from_numpy(agentview_0).to(self.device).float().unsqueeze(0)
-                )
-                agentview_1 = (
-                    torch.from_numpy(agentview_1).to(self.device).float().unsqueeze(0)
-                )
-
-                # agentview_0 = agentview_0.to(self.device)
-                # agentview_1 = agentview_1.to(self.device)
+                agentview_0 = agentview_0.to(self.device)
+                agentview_1 = agentview_1.to(self.device)
 
                 # obs = self.scaler.scale_input(obs)
                 action = self.scaler.scale_output(action)
@@ -290,8 +274,10 @@ class DiffusionAgent(BaseAgent):
 
                 end = time()
                 compute_time += end - start
-            os.write(f, f"read time: {read_time}")
-            os.write(f, f"compute time: {compute_time}")
+            print(f"read time: {read_time}")
+            print(f"compute time: {compute_time}")
+            os.write(f, f"read time: {read_time}".encode())
+            os.write(f, f"compute time: {compute_time}".encode)
             os.close(f)
 
             log.info(
