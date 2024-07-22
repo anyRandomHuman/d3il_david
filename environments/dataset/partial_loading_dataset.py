@@ -5,14 +5,15 @@ from pathlib import Path
 import numpy as np
 import torch
 from tqdm import tqdm
-from agents.utils.hdf5_to_img import read_img_from_hdf5
+import h5py, cv2
+import psutil
 
 
 def img_file_key(p: Path):
     return int(p.name.partition(".")[0])
 
 
-class Lazy_Loading_Dataset(TrajectoryDataset):
+class Partial_Loading_Dataset(TrajectoryDataset):
     def __init__(
         self,
         data_directory: os.PathLike,
@@ -62,22 +63,15 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         self.cam_0_resize = (cam_0_w, cam_0_h)
         self.cam_1_resize = (cam_1_w, cam_1_h)
         self.cams_resize = [self.cam_0_resize, self.cam_1_resize]
-        self.traj_dirs = list(data_dir.iterdir())
+        self.traj_dirs = sorted(list(data_dir.iterdir()))
         self.to_tensor = to_tensor
 
-        for traj_dir in tqdm(self.traj_dirs):
-            # traj_img_index = []
-            # image_path = traj_dir / "images"
-            # image_hdf5 = traj_dir / "imgs.hdf5"
-            # if Path(image_path).is_dir() :
-            #     pass
-            # elif Path(image_hdf5).exists():
-            #     with h5py.File(image_hdf5, 'r') as f:
-            #         for i,dataset in enumerate(list(f.keys())[:cam_num]):
-            #             cam_img_index = range(len(f[dataset]))
-            #             traj_img_index.append((image_hdf5, dataset, cam_img_index))
-            #     cams_img_index[i].append(traj_img_index)
+        self.loaded_traj_index = []
+        self.traj_use_count = np.zeros(len(self.traj_dirs))
 
+        self.imgs = []
+
+        for i, traj_dir in enumerate(tqdm(self.traj_dirs)):
             zero_action = torch.zeros(
                 (1, self.max_len_data, self.action_dim), dtype=torch.float32
             )
@@ -100,6 +94,22 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
             zero_mask[0, :valid_len] = 1
             actions.append(zero_action)
             masks.append(zero_mask)
+
+        for i, traj_dir in enumerate(tqdm(self.traj_dirs)):
+            image_path = traj_dir / "images"
+            image_hdf5 = traj_dir / "imgs.hdf5"
+            if Path(image_path).is_dir():
+                pass
+            elif Path(image_hdf5).exists():
+                self.read_img_from_hdf5(
+                    traj_index=i,
+                    start=0,
+                    end=-1,
+                    cam_resizes=self.cams_resize,
+                    device=self.device,
+                    to_tensor=to_tensor,
+                    preemptive=False,
+                )
 
         # self.cams_imgs_index = cams_img_index
         self.actions = torch.cat(actions).to(device).float()
@@ -148,18 +158,81 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         i, start, end = self.slices[idx]
         traj_dir = self.traj_dirs[i]
 
-        cams_imgs = read_img_from_hdf5(
-            traj_dir,
-            start,
-            end,
-            self.cams_resize,
-            self.device,
+        act = self.actions[i, start:end]
+        mask = self.masks[i, start:end]
+
+        for list_index, traj_index in enumerate(self.loaded_traj_index):
+            if traj_index == i:
+                cam_0 = self.imgs[list_index][0][start:end]
+                cam_1 = self.imgs[list_index][1][start:end]
+                self.traj_use_count[i] += 1
+                return cam_0, cam_1, act, mask
+
+        cams_imgs = self.read_img_from_hdf5(
+            traj_index=i,
+            start=start,
+            end=end,
+            cam_resizes=self.cams_resize,
+            device=self.device,
             to_tensor=self.to_tensor,
         )
         cam_0 = cams_imgs[0]
         cam_1 = cams_imgs[1]
 
-        act = self.actions[i, start:end]
-        mask = self.masks[i, start:end]
-
         return cam_0, cam_1, act, mask
+
+    def read_img_from_hdf5(
+        self,
+        traj_index,
+        start,
+        end,
+        cam_resizes=[(256, 256), (256, 256)],
+        device="cuda",
+        to_tensor=True,
+        preemptive=False,
+    ):
+        path = self.traj_dirs[traj_index]
+        ava_mem = psutil.virtual_memory().available
+        needed_mem = os.path.getsize(path)
+        if ava_mem < needed_mem and not preemptive:
+            print("not enough memory, only loading the index")
+            return []
+        elif ava_mem < needed_mem and preemptive:
+            index_most_freq_used_traj = np.argmax(self.traj_use_count)
+            del self.loaded_traj_index[index_most_freq_used_traj]
+            del self.imgs[index_most_freq_used_traj]
+
+        self.loaded_traj_index.append(traj_index)
+
+        f = h5py.File(os.path.join(path, "imgs.hdf5"), "r")
+        cams = []
+        for i, cam in enumerate(list(f.keys())):
+            arr = f[cam][start:end]
+            imgs = []
+            for img in arr:
+                nparr = cv2.imdecode(img, 1)
+                processed = self.preprocess_img_for_training(
+                    img=nparr, resize=cam_resizes[i], device=device, to_tensor=to_tensor
+                )
+
+                imgs.append(processed)
+            imgs = torch.concatenate(imgs, dim=0)
+            cams.append(imgs)
+        f.close()
+
+        self.imgs.append(cams)
+        return cams
+
+    def preprocess_img_for_training(
+        self, img, resize=(256, 256), device="cuda", to_tensor=True
+    ):
+
+        if not img.shape == resize:
+            img = cv2.resize(img, resize)
+
+        img = img.transpose((2, 0, 1)) / 255.0
+
+        if to_tensor:
+            img = torch.from_numpy(img).to(device).float().unsqueeze(0)
+
+        return img
