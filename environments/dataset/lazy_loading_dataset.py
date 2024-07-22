@@ -66,8 +66,6 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         self.to_tensor = to_tensor
 
         for traj_dir in tqdm(self.traj_dirs):
-<<<<<<< HEAD
-=======
             # traj_img_index = []
             # image_path = traj_dir / "images"
             # image_hdf5 = traj_dir / "imgs.hdf5"
@@ -79,7 +77,6 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
             #             cam_img_index = range(len(f[dataset]))
             #             traj_img_index.append((image_hdf5, dataset, cam_img_index))
             #     cams_img_index[i].append(traj_img_index)
->>>>>>> chaning the config
 
             zero_action = torch.zeros(
                 (1, self.max_len_data, self.action_dim), dtype=torch.float32
