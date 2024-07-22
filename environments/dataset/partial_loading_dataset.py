@@ -30,6 +30,7 @@ class Partial_Loading_Dataset(TrajectoryDataset):
         cam_1_h=256,
         cam_num=2,
         to_tensor=True,
+        pre_load_num = 40
     ):
 
         super().__init__(
@@ -63,6 +64,9 @@ class Partial_Loading_Dataset(TrajectoryDataset):
         self.cam_0_resize = (cam_0_w, cam_0_h)
         self.cam_1_resize = (cam_1_w, cam_1_h)
         self.cams_resize = [self.cam_0_resize, self.cam_1_resize]
+
+        self.pre_load_num = pre_load_num
+
         self.traj_dirs = sorted(list(data_dir.iterdir()))
         self.to_tensor = to_tensor
 
@@ -95,7 +99,7 @@ class Partial_Loading_Dataset(TrajectoryDataset):
             actions.append(zero_action)
             masks.append(zero_mask)
 
-        for i, traj_dir in enumerate(tqdm(self.traj_dirs)):
+        for i, traj_dir in enumerate(tqdm(self.traj_dirs[:pre_load_num])):
             image_path = traj_dir / "images"
             image_hdf5 = traj_dir / "imgs.hdf5"
             if Path(image_path).is_dir():
@@ -175,6 +179,7 @@ class Partial_Loading_Dataset(TrajectoryDataset):
             cam_resizes=self.cams_resize,
             device=self.device,
             to_tensor=self.to_tensor,
+            preemptive= False
         )
         cam_0 = cams_imgs[0]
         cam_1 = cams_imgs[1]
@@ -202,7 +207,7 @@ class Partial_Loading_Dataset(TrajectoryDataset):
             del self.loaded_traj_index[index_most_freq_used_traj]
             del self.imgs[index_most_freq_used_traj]
 
-        self.loaded_traj_index.append(traj_index)
+            self.loaded_traj_index.append(traj_index)
 
         f = h5py.File(os.path.join(path, "imgs.hdf5"), "r")
         cams = []

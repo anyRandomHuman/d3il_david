@@ -133,6 +133,7 @@ trainset:
   cam_1_h: 256
   cam_num: ${cam_num}
   to_tensor: ${to_tensor}
+  pre_load_num: 40
 
 valset:
   _target_: environments.dataset.lazy_loading_dataset.Lazy_Loading_Dataset
@@ -149,6 +150,8 @@ valset:
   cam_1_h: 256
   cam_num: ${cam_num}
   to_tensor: ${to_tensor}
+  pre_load_num: 40
+
 
 # Simulation
 simulation:
