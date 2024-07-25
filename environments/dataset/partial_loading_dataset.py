@@ -30,7 +30,8 @@ class Partial_Loading_Dataset(TrajectoryDataset):
         cam_1_h=256,
         cam_num=2,
         to_tensor=True,
-        pre_load_num = 40
+        pre_load_num=40,
+        preemptive=False,
     ):
 
         super().__init__(
@@ -69,6 +70,8 @@ class Partial_Loading_Dataset(TrajectoryDataset):
 
         self.traj_dirs = sorted(list(data_dir.iterdir()))
         self.to_tensor = to_tensor
+
+        self.preemptive = preemptive
 
         self.loaded_traj_index = []
         self.traj_use_count = np.zeros(len(self.traj_dirs))
@@ -114,6 +117,7 @@ class Partial_Loading_Dataset(TrajectoryDataset):
                     to_tensor=to_tensor,
                     preemptive=False,
                 )
+                self.loaded_traj_index.append(i)
 
         # self.cams_imgs_index = cams_img_index
         self.actions = torch.cat(actions).to(device).float()
@@ -160,7 +164,6 @@ class Partial_Loading_Dataset(TrajectoryDataset):
     def __getitem__(self, idx):
 
         i, start, end = self.slices[idx]
-        traj_dir = self.traj_dirs[i]
 
         act = self.actions[i, start:end]
         mask = self.masks[i, start:end]
@@ -179,7 +182,7 @@ class Partial_Loading_Dataset(TrajectoryDataset):
             cam_resizes=self.cams_resize,
             device=self.device,
             to_tensor=self.to_tensor,
-            preemptive= False
+            preemptive=self.preemptive,
         )
         cam_0 = cams_imgs[0]
         cam_1 = cams_imgs[1]
@@ -197,17 +200,18 @@ class Partial_Loading_Dataset(TrajectoryDataset):
         preemptive=False,
     ):
         path = self.traj_dirs[traj_index]
-        ava_mem = psutil.virtual_memory().available
-        needed_mem = os.path.getsize(path)
-        if ava_mem < needed_mem and not preemptive:
-            print("not enough memory, only loading the index")
-            return []
-        elif ava_mem < needed_mem and preemptive:
-            index_most_freq_used_traj = np.argmax(self.traj_use_count)
-            del self.loaded_traj_index[index_most_freq_used_traj]
-            del self.imgs[index_most_freq_used_traj]
 
-            self.loaded_traj_index.append(traj_index)
+        # ava_mem = psutil.virtual_memory().available
+        # needed_mem = os.path.getsize(path)
+        # if ava_mem < needed_mem and not preemptive:
+        #     print("not enough memory, only loading the index")
+        #     return []
+        # elif ava_mem < needed_mem and preemptive:
+        #     index_most_freq_used_traj = np.argmax(self.traj_use_count)
+        #     del self.loaded_traj_index[index_most_freq_used_traj]
+        #     del self.imgs[index_most_freq_used_traj]
+        #     # TODO: implement loading new traj data
+        #     self.loaded_traj_index.append(traj_index)
 
         f = h5py.File(os.path.join(path, "imgs.hdf5"), "r")
         cams = []

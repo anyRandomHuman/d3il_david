@@ -246,7 +246,7 @@ class DiffusionAgent(BaseAgent):
             end = time()
             read_time = 0
             compute_time = 0
-            for data in self.train_dataloader:
+            for data in tqdm(self.train_dataloader):
                 start = time()
                 read_time += start - end
 

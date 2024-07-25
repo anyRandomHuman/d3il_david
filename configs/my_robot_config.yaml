@@ -1,10 +1,11 @@
 defaults:
   - agents: ddpm_agent
+  - _self_ 
 
 agent_name: oc_ddpm
 log_dir: logs/real_robot_${task_suite}/
 
-train_data_path: /media/alr_admin/ECB69036B69002EE/Data_less_obs_space_hdf5
+train_data_path: /media/alr_admin/ECB69036B69002EE/david_data
 #train_data_path: /media/alr_admin/Data/atalay/data  # just for dataset init
 
 task_suite: insertion  # pickPlacing cupStacking insertion
@@ -12,7 +13,7 @@ if_sim: False
 
 # insert wandb here
 wandb:
-  entity: tcx513887573
+  entity: wayneweim
   project: praktikum
 
 group: ${task_suite}_${agent_name}
@@ -116,10 +117,9 @@ obj_centric: 0
 to_tensor: True
 
 # Dataset
-trainset:
-  # _target_: environments.dataset.real_robot_dataset.Real_Robot_Dataset
-  _target_: environments.dataset.partial_loading_dataset.Partial_Loading_Dataset
-  # _target_: environments.dataset.hdf5_dataset.Hdf5_Dataset
+trainset: 
+  _target_: environments.dataset.mydataloader.Real_Robot_Dataset
+  # get_all_actions: get_all_actions
   data_directory: ${train_data_path}
   task_suite: ${task_suite}
   obs_dim: ${obs_dim}
@@ -127,18 +127,11 @@ trainset:
   max_len_data: ${max_len_data}
   window_size: ${window_size}
   if_sim: ${if_sim}
-  cam_0_w: 256
-  cam_0_h: 256
-  cam_1_w: 256
-  cam_1_h: 256
-  cam_num: ${cam_num}
-  to_tensor: ${to_tensor}
-  pre_load_num: 30
-  preemptive: False
+ 
 
 valset:
-  _target_: environments.dataset.partial_loading_dataset.Partial_Loading_Dataset
-  # _target_: environments.dataset.lazy_loading_dataset.Lazy_Loading_Dataset
+  _target_: environments.dataset.mydataloader.Real_Robot_Dataset
+  # get_all_actions: get_all_actions
   data_directory: ${train_data_path}
   task_suite: ${task_suite}
   obs_dim: ${obs_dim}
@@ -146,14 +139,6 @@ valset:
   max_len_data: ${max_len_data}
   window_size: ${window_size}
   if_sim: ${if_sim}
-  cam_0_w: 256
-  cam_0_h: 256
-  cam_1_w: 256
-  cam_1_h: 256
-  cam_num: ${cam_num}
-  to_tensor: ${to_tensor}
-  pre_load_num: 30
-  preemptive: False
 
 
 # Simulation
