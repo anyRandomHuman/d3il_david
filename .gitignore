@@ -28,3 +28,4 @@ environments/dataset/data/stacking/vision_data/*
 real_robot_env/*
 Detic/*
 detectron2/*
+configs/real_robot_config.yaml
