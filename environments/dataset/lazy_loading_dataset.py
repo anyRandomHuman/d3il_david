@@ -29,6 +29,8 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         cam_1_h=256,
         cam_num=2,
         to_tensor=True,
+        pre_load_num=30,
+        preemptive=False,
     ):
 
         super().__init__(
@@ -46,7 +48,10 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         masks = []
 
         if task_suite == "cupStacking":
-            data_dir = Path(data_directory + "/cupstacking")
+            # data_dir = Path(data_directory + "/cupstacking")
+            data_dir = Path(
+                "/media/alr_admin/ECB69036B69002EE/Data_less_obs_new_hdf5/cupStacking"
+            )
         elif task_suite == "pickPlacing":
             data_dir = Path(data_directory + "/banana")
         elif task_suite == "insertion":

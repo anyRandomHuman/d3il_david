@@ -4,10 +4,10 @@ defaults:
 agent_name: oc_ddpm
 log_dir: logs/real_robot_${task_suite}/
 
-train_data_path: /media/alr_admin/ECB69036B69002EE/Data_less_obs_space_hdf5
+train_data_path: /media/alr_admin/ECB69036B69002EE/Data_less_obs_new_hdf5
 #train_data_path: /media/alr_admin/Data/atalay/data  # just for dataset init
 
-task_suite: insertion  # pickPlacing cupStacking insertion
+task_suite: cupStacking  # pickPlacing cupStacking insertion
 if_sim: False
 
 # insert wandb here
@@ -118,7 +118,8 @@ to_tensor: True
 # Dataset
 trainset:
   # _target_: environments.dataset.real_robot_dataset.Real_Robot_Dataset
-  _target_: environments.dataset.partial_loading_dataset.Partial_Loading_Dataset
+  # _target_: environments.dataset.partial_loading_dataset.Partial_Loading_Dataset
+  _target_: environments.dataset.lazy_loading_dataset.Lazy_Loading_Dataset
   # _target_: environments.dataset.hdf5_dataset.Hdf5_Dataset
   data_directory: ${train_data_path}
   task_suite: ${task_suite}
@@ -133,12 +134,12 @@ trainset:
   cam_1_h: 256
   cam_num: ${cam_num}
   to_tensor: ${to_tensor}
-  pre_load_num: 30
+  pre_load_num: -1
   preemptive: False
 
 valset:
-  _target_: environments.dataset.partial_loading_dataset.Partial_Loading_Dataset
-  # _target_: environments.dataset.lazy_loading_dataset.Lazy_Loading_Dataset
+  # _target_: environments.dataset.partial_loading_dataset.Partial_Loading_Dataset
+  _target_: environments.dataset.lazy_loading_dataset.Lazy_Loading_Dataset
   data_directory: ${train_data_path}
   task_suite: ${task_suite}
   obs_dim: ${obs_dim}
@@ -152,7 +153,7 @@ valset:
   cam_1_h: 256
   cam_num: ${cam_num}
   to_tensor: ${to_tensor}
-  pre_load_num: 30
+  pre_load_num: -1
   preemptive: False
 
 

@@ -240,15 +240,15 @@ class DiffusionAgent(BaseAgent):
 
             train_loss = []
 
-            f = os.open(
-                "/home/alr_admin/david/praktikum/d3il_david/time.txt", os.O_RDWR
-            )
-            end = time()
-            read_time = 0
-            compute_time = 0
+            # f = os.open(
+            #     "/home/alr_admin/david/praktikum/d3il_david/time.txt", os.O_RDWR
+            # )
+            # end = time()
+            # read_time = 0
+            # compute_time = 0
             for data in tqdm(self.train_dataloader):
-                start = time()
-                read_time += start - end
+                # start = time()
+                # read_time += start - end
 
                 agentview_0, agentview_1, action, mask = data
 
@@ -272,13 +272,13 @@ class DiffusionAgent(BaseAgent):
 
                 wandb.log({"train_loss": batch_loss.item()})
 
-                end = time()
-                compute_time += end - start
-            print(f"read time: {read_time}")
-            print(f"compute time: {compute_time}")
-            os.write(f, f"read time: {read_time}".encode())
-            os.write(f, f"compute time: {compute_time}".encode())
-            os.close(f)
+                # end = time()
+                # compute_time += end - start
+            # print(f"read time: {read_time}")
+            # print(f"compute time: {compute_time}")
+            # os.write(f, f"read time: {read_time}".encode())
+            # os.write(f, f"compute time: {compute_time}".encode())
+            # os.close(f)
 
             log.info(
                 "Epoch {}: Mean train loss is {}".format(num_epoch, batch_loss.item())

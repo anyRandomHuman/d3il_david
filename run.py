@@ -66,9 +66,6 @@ def main(cfg: DictConfig) -> None:
 #     trainset = hydra.utils.instantiate(cfg.trainset)
 #     print(trainset[0])
 
-from omegaconf import OmegaConf, DictConfig
-
-
 
 if __name__ == "__main__":
     main()

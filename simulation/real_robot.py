@@ -1,4 +1,6 @@
 from pathlib import Path
+
+import matplotlib.axis
 from simulation.base_sim import BaseSim
 import logging
 import numpy as np
@@ -10,6 +12,8 @@ from real_robot_env.robot.utils.keyboard import KeyManager
 
 import cv2
 import time
+
+
 
 DELTA_T = 0.034
 
@@ -25,7 +29,7 @@ class RealRobot(BaseSim):
             ip_address="141.3.53.154",
             port=50053,
             control_type=ControlType.HYBRID_JOINT_IMPEDANCE_CONTROL,
-            hz=100
+            hz=100,
         )
         assert self.p4.connect(), f"Connection to {self.p4.name} failed"
 
@@ -44,20 +48,20 @@ class RealRobot(BaseSim):
 
         km = KeyManager()
 
-        while km.key != 'q':
+        while km.key != "q":
             print("Press 's' to start a new evaluation, or 'q' to quit")
             km.pool()
 
-            while km.key not in ['s', 'q']:
+            while km.key not in ["s", "q"]:
                 km.pool()
 
-            if km.key == 's':
+            if km.key == "s":
                 agent.reset()
 
                 print("Starting evaluation. Press 'd' to stop current evaluation")
 
                 km.pool()
-                while km.key != 'd':
+                while km.key != "d":
                     km.pool()
 
                     obs = self.__get_obs()
@@ -96,8 +100,11 @@ class RealRobot(BaseSim):
         # cv2.imshow('1', img1)
         # cv2.waitKey(0)
 
-        processed_img0 = cv2.resize(img0, (128, 256)).astype(np.float32).transpose((2, 0, 1)) / 255.0
-        processed_img1 = cv2.resize(img1, (256, 256)).astype(np.float32).transpose((2, 0, 1)) / 255.0
+        processed_img0 = (
+            cv2.resize(img0, (256, 256)).astype(np.float32).transpose((2, 0, 1)) / 255.0
+        )
+        processed_img1 = (
+            cv2.resize(img1, (256, 256)).astype(np.float32).transpose((2, 0, 1)) / 255.0
+        )
 
         return (processed_img0, processed_img1)
-
