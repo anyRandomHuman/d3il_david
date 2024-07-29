@@ -101,7 +101,7 @@ scale_data: True
 # Environment
 obs_dim: 10 # not used
 action_dim: 8
-max_len_data: 1400
+max_len_data: 1000
 
 action_seq_size: 5
 obs_seq_len: 1

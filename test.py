@@ -12,3 +12,8 @@ import os
 # # print(psutil.virtual_memory().available - ava_mem)
 # # del t
 # # print(psutil.virtual_memory().available)
+full_path = "/media/alr_admin/ECB69036B69002EE/Data_less_obs_space_hdf5/insertion/2024_07_02-16_13_56/imgs.hdf5"
+path = "/media/alr_admin/ECB69036B69002EE/Data_less_obs_space_hdf5/insertion"
+traj = "/2024_07_02-16_13_56/imgs.hdf5"
+
+assert full_path == path + traj
