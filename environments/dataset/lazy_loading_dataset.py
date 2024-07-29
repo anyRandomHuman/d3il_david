@@ -88,9 +88,9 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
             )
             zero_mask = torch.zeros((1, self.max_len_data), dtype=torch.float32)
 
-            joint_pos = torch.load(traj_dir / "follower_joint_pos.pt")
+            joint_pos = torch.load(traj_dir / "leader_joint_pos.pt")
             # joint_vel = torch.load(traj_dir / "joint_vel.pt")
-            gripper_command = torch.load(traj_dir / "follower_gripper_state.pt")
+            gripper_command = torch.load(traj_dir / "leader_gripper_state.pt")
 
             valid_len = len(joint_pos) - 1
 
