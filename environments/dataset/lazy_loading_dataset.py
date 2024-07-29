@@ -48,7 +48,7 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         masks = []
 
         if task_suite == "cupStacking":
-            data_dir = Path(data_directory + "/cupstacking")
+            data_dir = Path(data_directory + "/cupStacking")
             # data_dir = Path(
             #     "/media/alr_admin/ECB69036B69002EE/Data_less_obs_new_hdf5/cupStacking"
             # )
