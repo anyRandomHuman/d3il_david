@@ -2,18 +2,19 @@ import logging
 from environments.dataset.base_dataset import TrajectoryDataset
 import os
 from pathlib import Path
+import cv2
 import numpy as np
 import torch
 from tqdm import tqdm
-import h5py, cv2
-import psutil
+import h5py
 
 
 def img_file_key(p: Path):
     return int(p.name.partition(".")[0])
 
 
-class Partial_Loading_Dataset(TrajectoryDataset):
+class Real_Robot_Dataset(TrajectoryDataset):
+
     def __init__(
         self,
         data_directory: os.PathLike,
@@ -45,11 +46,13 @@ class Partial_Loading_Dataset(TrajectoryDataset):
 
         logging.info("Loading Real Robot Dataset")
 
+        imgs_0_list = []
+        imgs_1_list = []
         actions = []
         masks = []
 
         if task_suite == "cupStacking":
-            data_dir = Path(data_directory + "/cupstacking")
+            data_dir = Path(data_directory + "/cupStacking")
         elif task_suite == "pickPlacing":
             data_dir = Path(data_directory + "/banana")
         elif task_suite == "insertion":
@@ -73,12 +76,25 @@ class Partial_Loading_Dataset(TrajectoryDataset):
 
         self.preemptive = preemptive
 
-        self.loaded_traj_index = []
-        self.traj_use_count = np.zeros(len(self.traj_dirs))
-
         self.imgs = []
 
         for i, traj_dir in enumerate(tqdm(self.traj_dirs)):
+
+            image_path = traj_dir / "images"
+            image_hdf5 = traj_dir / "imgs.hdf5"
+            if Path(image_path).is_dir():
+                pass
+            elif Path(image_hdf5).exists():
+                self.read_img_from_hdf5(
+                    traj_index=i,
+                    start=0,
+                    end=-1,
+                    cam_resizes=self.cams_resize,
+                    device=self.device,
+                    to_tensor=to_tensor,
+                    preemptive=False,
+                )
+
             zero_action = torch.zeros(
                 (1, self.max_len_data, self.action_dim), dtype=torch.float32
             )
@@ -102,28 +118,10 @@ class Partial_Loading_Dataset(TrajectoryDataset):
             actions.append(zero_action)
             masks.append(zero_mask)
 
-        for i, traj_dir in enumerate(tqdm(self.traj_dirs[:pre_load_num])):
-            image_path = traj_dir / "images"
-            image_hdf5 = traj_dir / "imgs.hdf5"
-            if Path(image_path).is_dir():
-                pass
-            elif Path(image_hdf5).exists():
-                self.read_img_from_hdf5(
-                    traj_index=i,
-                    start=0,
-                    end=-1,
-                    cam_resizes=self.cams_resize,
-                    device=self.device,
-                    to_tensor=to_tensor,
-                    preemptive=False,
-                )
-                self.loaded_traj_index.append(i)
-
-        # self.cams_imgs_index = cams_img_index
         self.actions = torch.cat(actions).to(device).float()
         self.masks = torch.cat(masks).to(device).float()
 
-        self.num_data = len(self.actions) - 1
+        self.num_data = len(self.actions)
 
         self.slices = self.get_slices()
 
@@ -167,27 +165,14 @@ class Partial_Loading_Dataset(TrajectoryDataset):
 
         act = self.actions[i, start:end]
         mask = self.masks[i, start:end]
-
-        for list_index, traj_index in enumerate(self.loaded_traj_index):
-            if traj_index == i:
-                cam_0 = self.imgs[list_index][0][start:end]
-                cam_1 = self.imgs[list_index][1][start:end]
-                self.traj_use_count[i] += 1
-                return cam_0, cam_1, act, mask
-
-        cams_imgs = self.read_img_from_hdf5(
-            traj_index=i,
-            start=start,
-            end=end,
-            cam_resizes=self.cams_resize,
-            device=self.device,
-            to_tensor=self.to_tensor,
-            preemptive=self.preemptive,
-        )
-        cam_0 = cams_imgs[0]
-        cam_1 = cams_imgs[1]
-
+        cam_0 = self.imgs[i][0][start:end]
+        cam_1 = self.imgs[i][1][start:end]
         return cam_0, cam_1, act, mask
+
+        # bp_imgs = self.bp_cam_imgs[i][start:end]
+        # inhand_imgs = self.inhand_cam_imgs[i][start:end]
+
+        return img_0, img_1, act, mask
 
     def read_img_from_hdf5(
         self,

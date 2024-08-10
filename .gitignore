@@ -24,3 +24,8 @@ environments/dataset/data/sorting/4_boxes/*
 environments/dataset/data/sorting/6_boxes/*
 environments/dataset/data/stacking/all_data/*
 environments/dataset/data/stacking/vision_data/*
+
+real_robot_env/*
+Detic/*
+detectron2/*
+configs/real_robot_config.yaml

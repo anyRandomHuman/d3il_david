@@ -4,7 +4,17 @@ import cv2
 import torch
 
 
-def read_img_from_hdf5(path, start, end, cam_resizes, device, to_tensor=True):
+def read_img_from_hdf5(
+    path,
+    start,
+    end,
+    cam_resizes=[(256, 256), (256, 256)],
+    device="cuda",
+    to_tensor=True,
+):
+    """
+    path =path to traj dir
+    """
     f = h5py.File(os.path.join(path, "imgs.hdf5"), "r")
     cams = []
     for i, cam in enumerate(list(f.keys())):
@@ -19,7 +29,10 @@ def read_img_from_hdf5(path, start, end, cam_resizes, device, to_tensor=True):
             )
 
             imgs.append(processed)
-        imgs = torch.concatenate(imgs, dim=0)
+        if to_tensor:
+            imgs = torch.concatenate(imgs, dim=0)
+        else:
+            pass
         cams.append(imgs)
     f.close()
     return cams

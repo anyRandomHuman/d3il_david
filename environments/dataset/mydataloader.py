@@ -2,17 +2,19 @@ import logging
 from environments.dataset.base_dataset import TrajectoryDataset
 import os
 from pathlib import Path
+import cv2
 import numpy as np
 import torch
 from tqdm import tqdm
-from agents.utils.hdf5_to_img import read_img_from_hdf5, read_feature
-
+import h5py
 
 def img_file_key(p: Path):
     return int(p.name.partition(".")[0])
 
 
-class Lazy_Loading_Dataset(TrajectoryDataset):
+
+class Real_Robot_Dataset(TrajectoryDataset):
+
     def __init__(
         self,
         data_directory: os.PathLike,
@@ -23,15 +25,7 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         max_len_data: int = 256,
         window_size: int = 1,
         if_sim: bool = False,
-        cam_0_w=256,
-        cam_0_h=256,
-        cam_1_w=256,
-        cam_1_h=256,
-        cam_num=2,
-        to_tensor=True,
-        pre_load_num=30,
-        preemptive=False,
-        feature = None
+        
     ):
 
         super().__init__(
@@ -45,14 +39,16 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
 
         logging.info("Loading Real Robot Dataset")
 
+        # data = torch.load("/home/alr_admin/david/real_robot/cams_dataset.pt")
+        # cam_0_list = data["cam_0_list"]
+        # cam_1_list = data["cam_1_list"]
+        # print(f"The shape of cam_0_list:", data["cam_0_list"].size())
+
         actions = []
         masks = []
 
         if task_suite == "cupStacking":
-            data_dir = Path(data_directory + "/cupStacking")
-            # data_dir = Path(
-            #     "/media/alr_admin/ECB69036B69002EE/Data_less_obs_new_hdf5/cupStacking"
-            # )
+            data_dir = Path(data_directory + "/cupstacking")
         elif task_suite == "pickPlacing":
             data_dir = Path(data_directory + "/banana")
         elif task_suite == "insertion":
@@ -60,39 +56,57 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         else:
             raise ValueError("Wrong name of task suite.")
 
-        if not if_sim:
-            load_img = -1
-        else:
-            load_img = 1
-
-        self.cam_0_resize = (cam_0_w, cam_0_h)
-        self.cam_1_resize = (cam_1_w, cam_1_h)
-        self.cams_resize = [self.cam_0_resize, self.cam_1_resize]
+        # if not if_sim:
+        #     load_img = -1
+        # else:
+        #     load_img = 1
         self.traj_dirs = list(data_dir.iterdir())
-        self.to_tensor = to_tensor
-        self.feature = feature
-
+        
         for traj_dir in tqdm(self.traj_dirs):
-            # traj_img_index = []
-            # image_path = traj_dir / "images"
-            # image_hdf5 = traj_dir / "imgs.hdf5"
-            # if Path(image_path).is_dir() :
-            #     pass
-            # elif Path(image_hdf5).exists():
-            #     with h5py.File(image_hdf5, 'r') as f:
-            #         for i,dataset in enumerate(list(f.keys())[:cam_num]):
-            #             cam_img_index = range(len(f[dataset]))
-            #             traj_img_index.append((image_hdf5, dataset, cam_img_index))
-            #     cams_img_index[i].append(traj_img_index)
+            self.hdf5_filename = "traj_dir/insertion"
+            self.load_images_from_hdf5()
+            # img_0_dir = traj_dir / "images" / "cam0"
+            # img_1_dir = traj_dir / "images" / "cam1_orig"
+
+            # imgs_0 = []
+            # for img_file in sorted(
+            #     img_0_dir.iterdir(), key=lambda p: int(p.name.partition(".")[0])
+            # )[:load_img]:
+            #     img = cv2.imread(str(img_file)).astype(np.float32)
+
+            #     img = cv2.resize(img, (128, 256))
+
+            #     img = img.transpose((2, 0, 1)) / 255.0
+
+            #     img = torch.from_numpy(img).to(self.device).float().unsqueeze(0)
+
+            #     imgs_0.append(img)
+
+            # imgs_1 = []
+            # for img_file in sorted(
+            #     img_1_dir.iterdir(), key=lambda p: int(p.name.partition(".")[0])
+            # )[:load_img]:
+            #     img = cv2.imread(str(img_file)).astype(np.float32)
+
+            #     img = cv2.resize(img, (256, 256))
+
+            #     img = img.transpose((2, 0, 1)) / 255.0
+
+            #     img = torch.from_numpy(img).to(self.device).float().unsqueeze(0)
+
+            #     imgs_1.append(img)
+
+            # imgs_0 = torch.concatenate(imgs_0, dim=0)
+            # imgs_1 = torch.concatenate(imgs_1, dim=0)
 
             zero_action = torch.zeros(
                 (1, self.max_len_data, self.action_dim), dtype=torch.float32
             )
             zero_mask = torch.zeros((1, self.max_len_data), dtype=torch.float32)
 
-            joint_pos = torch.load(traj_dir / "leader_joint_pos.pt")
+            joint_pos = torch.load(traj_dir / "follower_joint_pos.pt")
             # joint_vel = torch.load(traj_dir / "joint_vel.pt")
-            gripper_command = torch.load(traj_dir / "leader_gripper_state.pt")
+            gripper_command = torch.load(traj_dir / "follower_gripper_state.pt")
 
             valid_len = len(joint_pos) - 1
 
@@ -105,14 +119,20 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
             )
 
             zero_mask[0, :valid_len] = 1
+
+            #     imgs_0_list.append(imgs_0)
+            #     imgs_1_list.append(imgs_1)
             actions.append(zero_action)
             masks.append(zero_mask)
 
-        # self.cams_imgs_index = cams_img_index
+        # self.imgs_0_list = imgs_0_list
+        # self.imgs_1_list = imgs_1_list
+        # self.cam_0_list = cam_0_list
+        # self.cam_1_list = cam_1_list
         self.actions = torch.cat(actions).to(device).float()
         self.masks = torch.cat(masks).to(device).float()
 
-        self.num_data = len(self.actions) - 1
+        self.num_data = len(self.actions)
 
         self.slices = self.get_slices()
 
@@ -145,7 +165,23 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         for i in range(len(self.masks)):
             T = int(self.masks[i].sum().item())
             result.append(self.actions[i, :T, :])
+
         return torch.cat(result, dim=0)
+    
+    def load_images_from_hdf5(self, hdf5_filename):
+        with h5py.File(hdf5_filename, "r") as hdf5_file:
+            # 读取cam0数据集
+            cam0_data = hdf5_file["cam0"][:]
+            # 将numpy数组转换为张量
+            self.cam_0_list = torch.tensor(cam0_data, dtype=torch.float32)
+            
+            # 读取cam1数据集
+            cam1_data = hdf5_file["cam1"][:]
+            # 将numpy数组转换为张量
+            self.cam_1_list = torch.tensor(cam1_data, dtype=torch.float32)
+        
+        
+
 
     def __len__(self):
         return len(self.slices)
@@ -153,26 +189,13 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
     def __getitem__(self, idx):
 
         i, start, end = self.slices[idx]
-        traj_dir = self.traj_dirs[i]
 
-        cams_imgs = read_img_from_hdf5(
-            traj_dir,
-            start,
-            end,
-            self.cams_resize,
-            self.device,
-            to_tensor=self.to_tensor,
-        )
-        cam_0 = cams_imgs[0]
-        cam_1 = cams_imgs[1]
-
+        img_0 = self.cam_0_list[i][start:end]
+        img_1 = self.cam_1_list[i][start:end]
         act = self.actions[i, start:end]
         mask = self.masks[i, start:end]
 
-        if feature:
-            feature = read_feature(traj_dir, self.feature, start, end, self.cams_resize, self.device)
+        # bp_imgs = self.bp_cam_imgs[i][start:end]
+        # inhand_imgs = self.inhand_cam_imgs[i][start:end]
 
-            cam_0_feature = feature[0]
-            cam_1_feature = feature[1]
-
-        return cam_0, cam_1, act, mask
+        return img_0, img_1, act, mask
