@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from tqdm import tqdm
-from agents.utils.hdf5_to_img import read_img_from_hdf5
+from agents.utils.hdf5_to_img import read_img_from_hdf5, read_feature
 
 
 def img_file_key(p: Path):
@@ -29,6 +29,7 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         cam_1_h=256,
         cam_num=2,
         to_tensor=True,
+        feature = None
     ):
 
         super().__init__(
@@ -64,6 +65,7 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
         self.cams_resize = [self.cam_0_resize, self.cam_1_resize]
         self.traj_dirs = list(data_dir.iterdir())
         self.to_tensor = to_tensor
+        self.feature = feature
 
         for traj_dir in tqdm(self.traj_dirs):
             # traj_img_index = []
@@ -161,5 +163,11 @@ class Lazy_Loading_Dataset(TrajectoryDataset):
 
         act = self.actions[i, start:end]
         mask = self.masks[i, start:end]
+
+        if feature:
+            feature = read_feature(traj_dir, self.feature, start, end, self.cams_resize, self.device)
+
+            cam_0_feature = feature[0]
+            cam_1_feature = feature[1]
 
         return cam_0, cam_1, act, mask

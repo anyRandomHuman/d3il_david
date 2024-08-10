@@ -37,6 +37,20 @@ def preprocess_img_for_training(img, resize=(256, 256), device="cuda", to_tensor
 
     return img
 
+def read_feature(path, feature, start, end, cam_resizes, device, to_tensor=True):
+    """
+    return list of tensors
+    len(l) = num_cam
+    shape of tensor: [h,w,top_n(objects)]
+    """
+    path = os.path.join(path, feature)
+    f = torch.load(path)
+    slices = []
+    for i in range(f.shape[0]):
+        slice = torch.reshape(f[i][start:end], cam_resizes[i] + (-1,)).to(device)
+        slices.append(slice)
+    return slices
+
 
 if __name__ == "__main__":
     path = "/media/alr_admin/ECB69036B69002EE/Data_less_obs_space_hdf5/insertion/2024_07_04-16_02_30"

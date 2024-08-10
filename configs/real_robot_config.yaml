@@ -134,6 +134,10 @@ trainset:
   cam_num: ${cam_num}
   to_tensor: ${to_tensor}
   pre_load_num: 40
+  feature: 'joint_mask.hdf5'
+  # feature: 'joint_box.hdf5'
+  # feature: 'box.hdf5'
+  # feature: 'mask.hdf5'
 
 valset:
   _target_: environments.dataset.lazy_loading_dataset.Lazy_Loading_Dataset
@@ -151,6 +155,11 @@ valset:
   cam_num: ${cam_num}
   to_tensor: ${to_tensor}
   pre_load_num: 40
+
+  feature: 'joint_mask.hdf5'
+  # feature: 'joint_box.hdf5'
+  # feature: 'box.hdf5'
+  # feature: 'mask.hdf5'
 
 
 # Simulation
